@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:quotes_app/models/quote.dart';
+import 'package:quotes_app/screens/form_screen.dart';
 import 'package:quotes_app/screens/quote_detail_screen.dart';
 import 'package:quotes_app/screens/quote_list_screen.dart';
 
 class MyRouterDelegate extends RouterDelegate with ChangeNotifier, PopNavigatorRouterDelegateMixin {
   final GlobalKey<NavigatorState> _navigatorKey;
   String? selectedQuote;
+  bool isForm = false;
 
   MyRouterDelegate() : _navigatorKey = GlobalKey<NavigatorState>();
 
@@ -22,6 +24,10 @@ class MyRouterDelegate extends RouterDelegate with ChangeNotifier, PopNavigatorR
               selectedQuote = quoteId;
               notifyListeners();
             },
+            toFormScreen: () {
+              isForm = true;
+              notifyListeners();
+            },
           ),
         ),
         if (selectedQuote != null) 
@@ -29,6 +35,16 @@ class MyRouterDelegate extends RouterDelegate with ChangeNotifier, PopNavigatorR
             key: ValueKey("QuoteDetailPage-$selectedQuote"),
             child: QuoteDetailsScreen(
               quoteId: selectedQuote!
+            )
+          ),
+        if (isForm)
+          MaterialPage(
+            key: const ValueKey('FormScreen'),
+            child: FormScreen(
+              onSend: () {
+                isForm = false;
+                notifyListeners();
+              }
             )
           )
       ],
@@ -40,6 +56,7 @@ class MyRouterDelegate extends RouterDelegate with ChangeNotifier, PopNavigatorR
         }
 
         selectedQuote = null;
+        isForm = false;
         notifyListeners();
 
         return true;
@@ -54,5 +71,4 @@ class MyRouterDelegate extends RouterDelegate with ChangeNotifier, PopNavigatorR
   Future<void> setNewRoutePath(configuration) {
     throw UnimplementedError();
   }
-
 }
