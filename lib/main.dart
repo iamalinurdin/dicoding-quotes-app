@@ -1,5 +1,6 @@
 import 'package:provider/provider.dart';
-import 'package:quotes_app/routes/page_manager.dart';
+import 'package:quotes_app/db/auth_repository.dart';
+import 'package:quotes_app/providers/auth_provider.dart';
 import 'package:quotes_app/routes/router_delegate.dart';
 import 'package:flutter/material.dart';
 
@@ -16,17 +17,21 @@ class QuotesApp extends StatefulWidget {
 
 class _QuotesAppState extends State<QuotesApp> {
   late MyRouterDelegate myRouterDelegate;
+  late AuthProvider authProvider;
 
   @override
   void initState() {
     super.initState();
-    myRouterDelegate = MyRouterDelegate();
+    final authRepository = AuthRepository();
+    
+    myRouterDelegate = MyRouterDelegate(authRepository);
+    authProvider = AuthProvider(authRepository);
   }
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => PageManager(),
+      create: (context) => authProvider,
       child: MaterialApp(
         title: 'Quotes App',
         home: Router(
