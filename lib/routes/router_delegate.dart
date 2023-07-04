@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quotes_app/db/auth_repository.dart';
+import 'package:quotes_app/models/page_configuration.dart';
 import 'package:quotes_app/models/quote.dart';
 import 'package:quotes_app/screens/form_screen.dart';
 import 'package:quotes_app/screens/login_screen.dart';
@@ -8,14 +9,15 @@ import 'package:quotes_app/screens/quote_list_screen.dart';
 import 'package:quotes_app/screens/splash_screen.dart';
 import 'package:quotes_app/screens/register_screen.dart';
 
-class MyRouterDelegate extends RouterDelegate with ChangeNotifier, PopNavigatorRouterDelegateMixin {
+class MyRouterDelegate extends RouterDelegate<PageConfiguration> with ChangeNotifier, PopNavigatorRouterDelegateMixin {
   final GlobalKey<NavigatorState> _navigatorKey;
   String? selectedQuote;
   bool isForm = false;
   final AuthRepository authRepository;
-  List<Page> historyBack = [];
+  List<Page> historyStack = [];
   bool? isLoggedIn;
   bool isRegister = false;
+  bool? isUnknown;
 
   List<Page> get _splashStack => const [
     MaterialPage(
@@ -104,16 +106,16 @@ class MyRouterDelegate extends RouterDelegate with ChangeNotifier, PopNavigatorR
   @override
   Widget build(BuildContext context) {
     if (isLoggedIn == null) {
-      historyBack = _splashStack;
+      historyStack = _splashStack;
     } else if (isLoggedIn == true) {
-      historyBack = _loggedInStack;
+      historyStack = _loggedInStack;
     } else {
-      historyBack = _loggedOutStack;
+      historyStack = _loggedOutStack;
     }
 
     return Navigator(
       key: navigatorKey,
-      pages: historyBack,
+      pages: historyStack,
       onPopPage: (route, result) {
         final didPop = route.didPop(result);
 
@@ -134,7 +136,44 @@ class MyRouterDelegate extends RouterDelegate with ChangeNotifier, PopNavigatorR
   GlobalKey<NavigatorState>? get navigatorKey => _navigatorKey;
 
   @override
-  Future<void> setNewRoutePath(configuration) {
-    throw UnimplementedError();
+  Future<void> setNewRoutePath(PageConfiguration configuration) async {
+    if (configuration.isUnknownPage) {
+      isUnknown = true;
+      isRegister = false;
+    } else if (configuration.isRegisterPage) {
+      isRegister = true;
+    } else if (configuration.isHomePage ||
+        configuration.isLoginPage ||
+        configuration.isSplashPage) {
+      isUnknown = false;
+      selectedQuote = null;
+      isRegister = false;
+    } else if (configuration.isDetailPage) {
+      isUnknown = false;
+      isRegister = false;
+      selectedQuote = configuration.quoteId.toString();
+    } else {
+      print(' Could not set new route');
+    }
+    notifyListeners();
+  }
+
+  @override
+  PageConfiguration? get currentConfiguration {
+    if (isLoggedIn == null) {
+      return PageConfiguration.splash();
+    } else if (isRegister == true) {
+      return PageConfiguration.register();
+    } else if (isLoggedIn == false) {
+      return PageConfiguration.login();
+    } else if (isUnknown == true) {
+      return PageConfiguration.unknown();
+    } else if (selectedQuote == null) {
+      return PageConfiguration.home();
+    } else if (selectedQuote != null) {
+      return PageConfiguration.detailQuote(selectedQuote!);
+    } else {
+      return null;
+    }
   }
 }
